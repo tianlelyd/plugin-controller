@@ -1,21 +1,3 @@
-// document.addEventListener('DOMContentLoaded', function() {
-//     chrome.management.getAll(function(extensions) {
-//         const list = document.getElementById('extensions-list');
-//         extensions.forEach(extension => {
-//             const listItem = document.createElement('li');
-//             listItem.textContent = extension.name;
-//             const toggleButton = document.createElement('button');
-//             toggleButton.textContent = extension.enabled ? 'Disable' : 'Enable';
-//             toggleButton.onclick = function() {
-//                 chrome.management.setEnabled(extension.id, !extension.enabled, function() {
-//                     toggleButton.textContent = extension.enabled ? 'Enable' : 'Disable';
-//                 });
-//             };
-//             listItem.appendChild(toggleButton);
-//             list.appendChild(listItem);
-//         });
-//     });
-// });
 // 当文档加载完成时，执行以下代码
 document.addEventListener("DOMContentLoaded", function () {
   // 获取所有插件
