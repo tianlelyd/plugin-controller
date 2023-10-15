@@ -43,6 +43,28 @@ select {
   border-radius: 4px;
 }
 
+/* 分组列表样式 */
+#groups-list {
+  display: flex; /* 横向排列 */
+  flex-wrap: wrap; /* 如果有很多分组，允许它们换行 */
+  gap: 10px; /* 分组之间的间距 */
+  margin: 0; /* 与下面的内容的间距 */
+  list-style-type: none; /* 去掉默认的列表样式 */
+  padding: 0; /* 去掉默认的内边距 */
+}
+
+#groups-list li {
+  padding: 5px 10px; /* 内边距 */
+  border: 1px solid #ccc; /* 边框 */
+  border-radius: 5px; /* 圆角 */
+  cursor: pointer; /* 鼠标悬停时的样式 */
+  transition: background-color 0.3s; /* 背景颜色过渡效果 */
+}
+
+#groups-list li:hover {
+  background-color: #f5f5f5; /* 鼠标悬停时的背景颜色 */
+}
+
 /* 选中的分组的样式 */
 #groups-list li.selected {
   background-color: #4285f4;
