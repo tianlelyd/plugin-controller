@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Plugin Controller</title>
+    <style></style>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <button id="enableAll">Enable All</button>
+    <button id="disableAll">Disable All</button>
+
+    <hr />
+    <!-- 添加分组 -->
+    <label for="newGroup">Add New Group:</label>
+    <input type="text" id="newGroup" placeholder="Enter group name" />
+    <button id="addGroup">Add Group</button>
+
+    <hr />
+    <!-- 分隔线 -->
+    <!-- 分组选择器 -->
+    <label for="groupSelector">Select Group:</label>
+    <select id="groupSelector">
+      <option value="default">Default</option>
+      <!-- 其他分组将动态添加 -->
+    </select>
+    <button id="enableGroup">Enable Group</button>
+    <button id="disableGroup">Disable Group</button>
+
+    <hr />
+    <!-- 分隔线 -->
+
+    <ul id="extensions-list">
+      <!-- 插件列表将在此处动态生成 -->
+    </ul>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
