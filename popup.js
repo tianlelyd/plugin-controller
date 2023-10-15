@@ -16,12 +16,11 @@
 //         });
 //     });
 // });
+// 当文档加载完成时，执行以下代码
 document.addEventListener("DOMContentLoaded", function () {
   // 获取所有插件
   chrome.management.getAll(function (extensions) {
     const list = document.getElementById("extensions-list");
-    const groupSelector = document.getElementById("groupSelector");
-
     // 为每个插件创建列表项
     extensions.forEach((extension) => {
       const listItem = document.createElement("li");
@@ -48,20 +47,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // 创建启用/禁用按钮
       const toggleButton = document.createElement("button");
-      toggleButton.textContent = extension.enabled ? "Disable" : "Enable";
+      updateToggleButton(toggleButton, extension);
+
       toggleButton.onclick = function () {
-        chrome.management.get(extension.id, function (updatedExtension) {
-          chrome.management.setEnabled(
-            updatedExtension.id,
-            !updatedExtension.enabled,
-            function () {
-              toggleButton.textContent = updatedExtension.enabled
-                ? "Disable"
-                : "Enable";
-            }
-          );
-        });
+        chrome.management.setEnabled(
+          extension.id,
+          !extension.enabled,
+          function () {
+            // 在setEnabled的回调中再次获取扩展的信息
+            chrome.management.get(extension.id, function (updatedExtension) {
+              extension.enabled = updatedExtension.enabled; // 更新extension的状态
+              updateToggleButton(toggleButton, updatedExtension);
+            });
+          }
+        );
       };
+
+      // 更新按钮文本的函数
+      function updateToggleButton(button, ext) {
+        button.textContent = ext.enabled ? "Disable" : "Enable";
+      }
+
       listItem.appendChild(toggleButton);
 
       // 创建分组选择下拉列表
@@ -83,21 +89,36 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // 更新分组选择器
-    updateGroupSelector(groupSelector);
+    updateGroupSelector();
 
-    // 更新所有分组选择器
+    // 更新所有插件分组选择器
     updateAllGroupSelectors();
   });
 
-  // 按分组批量启用/禁用插件
+  // 按分组批量启用插件
   document.getElementById("enableGroup").onclick = function () {
-    const groupName = document.getElementById("groupSelector").value;
-    enableOrDisableGroup(groupName, true);
+    const selectedGroupItem = document.querySelector(
+      "#groups-list li.selected"
+    );
+    if (selectedGroupItem) {
+      const groupName = selectedGroupItem.textContent;
+      enableOrDisableGroup(groupName, true);
+    } else {
+      alert("Please select a group first.");
+    }
   };
 
+  // 按分组批量禁用插件
   document.getElementById("disableGroup").onclick = function () {
-    const groupName = document.getElementById("groupSelector").value;
-    enableOrDisableGroup(groupName, false);
+    const selectedGroupItem = document.querySelector(
+      "#groups-list li.selected"
+    );
+    if (selectedGroupItem) {
+      const groupName = selectedGroupItem.textContent;
+      enableOrDisableGroup(groupName, false);
+    } else {
+      alert("Please select a group first.");
+    }
   };
 });
 
@@ -112,13 +133,28 @@ function setGroup(extensionId, groupName) {
 }
 
 // 更新分组选择器
-function updateGroupSelector(selector) {
+function updateGroupSelector() {
   // 获取所有存储的分组
   const groups = new Set(Object.values(localStorage));
+
+  // 获取所有分组选择器
+  const groupsList = document.getElementById("groups-list");
+  groupsList.innerHTML = ""; // 清空列表
   groups.forEach((group) => {
-    const option = document.createElement("option");
-    option.textContent = group;
-    selector.appendChild(option);
+    const listItem = document.createElement("li");
+    listItem.textContent = group;
+    listItem.onclick = function () {
+      // 如果已经选中，则取消选中
+      if (listItem.classList.contains("selected")) {
+        listItem.classList.remove("selected");
+      } else {
+        // 否则，取消其他分组的选中状态，并选中当前分组
+        const allGroups = groupsList.querySelectorAll("li");
+        allGroups.forEach((item) => item.classList.remove("selected"));
+        listItem.classList.add("selected");
+      }
+    };
+    groupsList.appendChild(listItem);
   });
 }
 
@@ -156,6 +192,7 @@ document.getElementById("addGroup").onclick = function () {
   if (newGroupName) {
     addGroup(newGroupName);
     document.getElementById("newGroup").value = ""; // 清空输入框
+    updateAllGroupSelectors(); // 更新分组列表
   }
 };
 
@@ -164,11 +201,7 @@ function addGroup(groupName) {
   localStorage.setItem(`group_${groupName}`, groupName);
 
   // 更新分组选择器
-  const groupSelector = document.getElementById("groupSelector");
-  const option = document.createElement("option");
-  option.textContent = groupName;
-  option.value = groupName;
-  groupSelector.appendChild(option);
+  updateGroupSelector();
 
   // 更新所有分组选择器
   updateAllGroupSelectors();

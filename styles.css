@@ -1,44 +1,50 @@
 body {
-    font-family: Arial, sans-serif;
-    width: 300px;
-    background-color: #f9f9f9;
-    padding: 0px;
-  }
+  font-family: Arial, sans-serif;
+  width: 300px;
+  background-color: #f9f9f9;
+  padding: 0px;
+}
 
-  ul#extensions-list {
-    list-style-type: none;  
-    padding: 0;
-    margin: 0;
-  }
+ul#extensions-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
 
-  ul#extensions-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px;
-    border: 1px solid #e0e0e0;
-    margin-bottom: 5px;
-    background-color: #fff;
-    border-radius: 4px;
-  }
+ul#extensions-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 5px;
+  background-color: #fff;
+  border-radius: 4px;
+}
 
-  button {
-    padding: 5px 10px;
-    margin: 0 5px 0 5px;
-    border: none;
-    background-color: #4285f4;
-    color: #fff;
-    border-radius: 4px;
-    cursor: pointer;
-  }
+button {
+  padding: 5px 10px;
+  margin: 0 5px 0 5px;
+  border: none;
+  background-color: #4285f4;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
 
-  button:hover {
-    background-color: #357abf;
-  }
+button:hover {
+  background-color: #357abf;
+}
 
-  select {
-    padding: 5px;
-    border: 1px solid #e0e0e0;
-    background-color: #fff;
-    border-radius: 4px;
-  }
+select {
+  padding: 5px;
+  border: 1px solid #e0e0e0;
+  background-color: #fff;
+  border-radius: 4px;
+}
+
+/* 选中的分组的样式 */
+#groups-list li.selected {
+  background-color: #4285f4;
+  color: #fff;
+}

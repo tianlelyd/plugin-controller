@@ -11,25 +11,21 @@
     <button id="disableAll">Disable All</button>
 
     <hr />
-    <!-- 添加分组 -->
-    <label for="newGroup">Add New Group:</label>
+    <!-- 分组列表 -->
+    <ul id="groups-list"></ul>
+
+    <!-- 添加分组的输入框和按钮 -->
     <input type="text" id="newGroup" placeholder="Enter group name" />
     <button id="addGroup">Add Group</button>
 
-    <hr />
-    <!-- 分隔线 -->
-    <!-- 分组选择器 -->
-    <label for="groupSelector">Select Group:</label>
-    <select id="groupSelector">
-      <option value="default">Default</option>
-      <!-- 其他分组将动态添加 -->
-    </select>
+    <!-- 对选中分组执行操作的按钮 -->
     <button id="enableGroup">Enable Group</button>
     <button id="disableGroup">Disable Group</button>
 
     <hr />
     <!-- 分隔线 -->
 
+    <!-- 插件列表 -->
     <ul id="extensions-list">
       <!-- 插件列表将在此处动态生成 -->
     </ul>
