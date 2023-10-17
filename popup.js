@@ -1,223 +1,290 @@
-// 当文档加载完成时，执行以下代码
-document.addEventListener("DOMContentLoaded", function () {
-  // 获取所有插件
-  chrome.management.getAll(function (extensions) {
-    const list = document.getElementById("extensions-list");
-    // 为每个插件创建列表项
-    extensions.forEach((extension) => {
-      const listItem = document.createElement("li");
+// 获取插件自身的ID
+const currentExtensionId = chrome.runtime.id;
 
-      // 如果插件有图标，显示其最小尺寸的图标
-      if (extension.icons && extension.icons.length) {
-        const iconURL = extension.icons[0].url;
-        const iconImg = document.createElement("img");
-        iconImg.src = iconURL;
-        iconImg.alt = extension.name + " icon";
-        iconImg.style.width = "16px"; // 设置图标的宽度
-        iconImg.style.height = "16px"; // 设置图标的高度
-        iconImg.style.marginRight = "5px"; // 添加右边距
-        listItem.appendChild(iconImg);
-      }
-
-      // 创建一个 <span> 元素来显示插件的名称
-      const nameSpan = document.createElement("span");
-      nameSpan.style.width = "150px"; // 设置固定的宽度
-      nameSpan.textContent = extension.name;
-      listItem.appendChild(nameSpan);
-
-      //listItem.textContent = extension.name;
-
-      // 创建启用/禁用按钮
-      const toggleButton = document.createElement("button");
-      updateToggleButton(toggleButton, extension);
-
-      toggleButton.onclick = function () {
-        chrome.management.setEnabled(
-          extension.id,
-          !extension.enabled,
-          function () {
-            // 在setEnabled的回调中再次获取扩展的信息
-            chrome.management.get(extension.id, function (updatedExtension) {
-              extension.enabled = updatedExtension.enabled; // 更新extension的状态
-              updateToggleButton(toggleButton, updatedExtension);
-            });
-          }
-        );
-      };
-
-      // 更新按钮文本的函数
-      function updateToggleButton(button, ext) {
-        button.textContent = ext.enabled ? "Disable" : "Enable";
-      }
-
-      listItem.appendChild(toggleButton);
-
-      // 创建分组选择下拉列表
-      const groupDropdown = document.createElement("select");
-      groupDropdown.classList.add("extension-group-selector");
-      groupDropdown.dataset.extensionId = extension.id; // 为每个下拉列表添加一个自定义属性，用于更新所有下拉列表
-      // 添加默认分组选项
-      const defaultOption = document.createElement("option");
-      defaultOption.textContent = "default";
-      groupDropdown.appendChild(defaultOption);
-      // ... 添加其他分组选项
-      groupDropdown.value = getGroup(extension.id); // 设置当前插件的分组
-      groupDropdown.onchange = function () {
-        setGroup(extension.id, groupDropdown.value);
-      };
-      listItem.appendChild(groupDropdown);
-
-      list.appendChild(listItem);
-    });
-
-    // 更新分组选择器
-    updateGroupSelector();
-
-    // 更新所有插件分组选择器
-    updateAllGroupSelectors();
-  });
-
-  // 按分组批量启用插件
-  document.getElementById("enableGroup").onclick = function () {
-    const selectedGroupItem = document.querySelector(
-      "#groups-list li.selected"
-    );
-    if (selectedGroupItem) {
-      const groupName = selectedGroupItem.textContent;
-      enableOrDisableGroup(groupName, true);
-    } else {
-      alert("Please select a group first.");
-    }
-  };
-
-  // 按分组批量禁用插件
-  document.getElementById("disableGroup").onclick = function () {
-    const selectedGroupItem = document.querySelector(
-      "#groups-list li.selected"
-    );
-    if (selectedGroupItem) {
-      const groupName = selectedGroupItem.textContent;
-      enableOrDisableGroup(groupName, false);
-    } else {
-      alert("Please select a group first.");
-    }
-  };
+// 监听 background.js 发送的消息。
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  if (message.action === "enableOrDisableAll") {
+      enableOrDisableAll(message.enable);
+  }
 });
 
-// 获取插件的分组
+
+// 当文档加载完毕后，初始化插件列表和设置批量操作。
+document.addEventListener("DOMContentLoaded", function () {
+  initializeExtensions();
+  setupBulkActions();
+});
+
+// 获取并初始化所有插件的列表。
+function initializeExtensions() {
+  chrome.management.getAll((extensions) => {
+    const list = document.getElementById("extensions-list");
+    extensions.forEach((extension) => {
+      if (extension.id === currentExtensionId) return;
+      list.appendChild(createExtensionListItem(extension));
+    });
+    updateGroupSelector();
+    updateAllGroupSelectors();
+  });
+}
+
+// 为每个插件创建一个列表项。
+function createExtensionListItem(extension) {
+  const listItem = document.createElement("li");
+
+  // 如果插件有图标，添加图标到列表项。
+  if (extension.icons && extension.icons.length) {
+    const iconImg = document.createElement("img");
+    Object.assign(iconImg.style, {
+      width: "16px",
+      height: "16px",
+      marginRight: "5px",
+    });
+    iconImg.src = extension.icons[0].url;
+    iconImg.alt = `${extension.name} icon`;
+    listItem.appendChild(iconImg);
+  }
+
+  // 添加插件的名字到列表项。
+  const nameSpan = document.createElement("span");
+  nameSpan.style.width = "150px";
+  nameSpan.textContent = extension.name;
+  listItem.appendChild(nameSpan);
+
+  // 添加启用/禁用按钮到列表项。
+  const toggleButton = createToggleButton(extension);
+  listItem.appendChild(toggleButton);
+
+  // 添加分组下拉列表到列表项。
+  const groupDropdown = createGroupDropdown(extension);
+  listItem.appendChild(groupDropdown);
+
+  return listItem;
+}
+
+// 创建启用/禁用按钮。
+function createToggleButton(extension) {
+  const button = document.createElement("button");
+  updateToggleButton(button, extension);
+
+  button.onclick = function () {
+    toggleExtension(button, extension);
+  };
+
+  return button;
+}
+
+// 切换插件的启用/禁用状态。
+function toggleExtension(button, extension) {
+  chrome.management.setEnabled(extension.id, !extension.enabled, function () {
+    chrome.management.get(extension.id, function (updatedExtension) {
+      extension.enabled = updatedExtension.enabled;
+      updateToggleButton(button, updatedExtension);
+    });
+  });
+}
+
+// 更新启用/禁用按钮的文本。
+function updateToggleButton(button, ext) {
+  button.textContent = ext.enabled ? "Disable" : "Enable";
+}
+
+// 创建分组选择的下拉列表。
+function createGroupDropdown(extension) {
+  const dropdown = document.createElement("select");
+  dropdown.classList.add("extension-group-selector");
+  dropdown.dataset.extensionId = extension.id;
+
+  dropdown.value = getGroup(extension.id);
+  dropdown.onchange = function () {
+    setGroup(extension.id, dropdown.value);
+  };
+
+  return dropdown;
+}
+
+// 从localStorage中获取插件的分组。
 function getGroup(extensionId) {
   return localStorage.getItem(extensionId) || "default";
 }
 
-// 设置插件的分组
+// 将插件的分组设置到localStorage中。
 function setGroup(extensionId, groupName) {
-  localStorage.setItem(extensionId, groupName);
+  // 如果分组名为"default"，则从localStorage中删除插件的分组。
+  if (groupName === "default") {
+    localStorage.removeItem(extensionId);
+  } else {
+    localStorage.setItem(extensionId, groupName);
+  }
 }
 
-// 更新分组选择器
+// 更新插件分组列表的分组选择器。
 function updateGroupSelector() {
-  // 获取所有存储的分组
   const groups = new Set(Object.values(localStorage));
-
-  // 获取所有分组选择器
   const groupsList = document.getElementById("groups-list");
-  groupsList.innerHTML = ""; // 清空列表
+  groupsList.innerHTML = "";
+
   groups.forEach((group) => {
     const listItem = document.createElement("li");
     listItem.textContent = group;
-    listItem.onclick = function () {
-      // 如果已经选中，则取消选中
-      if (listItem.classList.contains("selected")) {
-        listItem.classList.remove("selected");
-      } else {
-        // 否则，取消其他分组的选中状态，并选中当前分组
-        const allGroups = groupsList.querySelectorAll("li");
-        allGroups.forEach((item) => item.classList.remove("selected"));
-        listItem.classList.add("selected");
-      }
+    listItem.onclick = toggleGroupSelection;
+
+    const deleteButton = document.createElement("span");
+    deleteButton.classList.add("delete-group");
+    deleteButton.textContent = "×";
+    // 点击叉叉图标删除分组并阻止事件冒泡。
+    deleteButton.onclick = function (event) {
+      event.stopPropagation();
+      deleteGroup(group);
+      // 删除分组
+      const groupName = event.target.parentElement.textContent.trim();
+      delete groups[groupName];
+      // 从DOM中移除分组
+      event.target.parentElement.remove();
     };
+
+    listItem.appendChild(deleteButton);
     groupsList.appendChild(listItem);
   });
 }
 
-// 按分组启用或禁用插件
-function enableOrDisableGroup(groupName, enable) {
+// 删除分组。
+function deleteGroup(groupName) {
+  localStorage.removeItem(`group_${groupName}`);
+  // 删除分组后，将原使用该分组的插件从localStorage中删除。
   chrome.management.getAll(function (extensions) {
     extensions.forEach((extension) => {
       if (getGroup(extension.id) === groupName) {
+        localStorage.removeItem(extension.id);
+      }
+    });
+    // 更新所有插件的分组选择器。
+    updateAllGroupSelectors();
+  });
+}
+
+// 切换分组的选择状态。
+function toggleGroupSelection(event) {
+  const listItem = event.target;
+  if (listItem.classList.contains("selected")) {
+    listItem.classList.remove("selected");
+  } else {
+    document
+      .querySelectorAll("#groups-list li")
+      .forEach((item) => item.classList.remove("selected"));
+    listItem.classList.add("selected");
+  }
+}
+
+// 根据分组名启用或禁用一组插件。
+function enableOrDisableGroup(groupName, enable) {
+  chrome.management.getAll(function (extensions) {
+    extensions.forEach((extension) => {
+      if (
+        getGroup(extension.id) === groupName &&
+        extension.id !== currentExtensionId
+      ) {
         chrome.management.setEnabled(extension.id, enable);
       }
     });
   });
 }
 
-// 启用所有插件
-document.getElementById("enableAll").onclick = function () {
-  chrome.management.getAll(function (extensions) {
-    extensions.forEach((extension) => {
-      chrome.management.setEnabled(extension.id, true);
-    });
+// 设置批量启用、禁用、添加分组的操作。
+function setupBulkActions() {
+  // 启用所有插件。
+  document.getElementById("enableAll").onclick = function () {
+    enableOrDisableAll(true);
+  };
+  // 禁用所有插件。
+  document.getElementById("disableAll").onclick = function () {
+    enableOrDisableAll(false);
+  };
+  // 启用已选择的分组。
+  document.getElementById("enableGroup").onclick = function () {
+    enableOrDisableSelectedGroup(true);
+  };
+  // 禁用已选择的分组。
+  document.getElementById("disableGroup").onclick = function () {
+    enableOrDisableSelectedGroup(false);
+  };
+  // 添加新的分组。
+  document.getElementById("addGroup").onclick = function () {
+    addNewGroup();
+  };
+
+  // 当鼠标悬停在分组列表上时，显示叉叉图标。点击叉叉图标删除分组。
+  document.addEventListener("click", function (event) {
+    if (event.target.tagName === "LI") {
+      // 隐藏所有叉叉图标
+      const allDeleteIcons = document.querySelectorAll(".delete-group");
+      allDeleteIcons.forEach((icon) => (icon.style.display = "none"));
+      // 显示叉叉图标
+      const deleteIcon = event.target.querySelector(".delete-group");
+      deleteIcon.style.display = "inline";
+    }
   });
-};
-
-// 禁用所有插件
-document.getElementById("disableAll").onclick = function () {
-  chrome.management.getAll(function (extensions) {
-    extensions.forEach((extension) => {
-      chrome.management.setEnabled(extension.id, false);
-    });
-  });
-};
-
-document.getElementById("addGroup").onclick = function () {
-  const newGroupName = document.getElementById("newGroup").value.trim();
-  if (newGroupName) {
-    addGroup(newGroupName);
-    document.getElementById("newGroup").value = ""; // 清空输入框
-    updateAllGroupSelectors(); // 更新分组列表
-  }
-};
-
-function addGroup(groupName) {
-  // 将新分组添加到localStorage
-  localStorage.setItem(`group_${groupName}`, groupName);
-
-  // 更新分组选择器
-  updateGroupSelector();
-
-  // 更新所有分组选择器
-  updateAllGroupSelectors();
 }
 
+// 启用或禁用所有插件。
+function enableOrDisableAll(enable) {
+  chrome.management.getAll(function (extensions) {
+    extensions.forEach((extension) => {
+      // 不要启用或禁用自身。
+      if (extension.id !== currentExtensionId)
+        chrome.management.setEnabled(extension.id, enable);
+    });
+  });
+}
+
+// 启用或禁用已选择的分组。
+function enableOrDisableSelectedGroup(enable) {
+  const selectedGroupItem = document.querySelector("#groups-list li.selected");
+  if (selectedGroupItem) {
+    const groupName = selectedGroupItem.textContent;
+    enableOrDisableGroup(groupName, enable);
+  } else {
+    alert("Please select a group first.");
+  }
+}
+
+// 添加新的分组。
+function addNewGroup() {
+  const newGroupName = document.getElementById("newGroup").value.trim();
+  if (newGroupName) {
+    localStorage.setItem(`group_${newGroupName}`, newGroupName);
+    document.getElementById("newGroup").value = "";
+    updateGroupSelector();
+    updateAllGroupSelectors();
+  }
+}
+
+// 更新所有插件的分组选择器。
 function updateAllGroupSelectors() {
   const allGroupSelectors = document.querySelectorAll(
     ".extension-group-selector"
   );
-  allGroupSelectors.forEach((selector) => {
-    // 获取当前插件的ID
-    const extensionId = selector.dataset.extensionId;
-    // 获取当前插件的分组
-    const currentGroup = getGroup(extensionId);
+  allGroupSelectors.forEach(updateGroupSelectorForDropdown);
+}
 
-    // 清空下拉列表
-    selector.innerHTML = "";
+// 更新单个插件的分组选择器。
+function updateGroupSelectorForDropdown(selector) {
+  const extensionId = selector.dataset.extensionId;
+  const currentGroup = getGroup(extensionId);
+  selector.innerHTML = "";
 
-    // 添加 "default" 选项
-    const defaultOption = document.createElement("option");
-    defaultOption.textContent = "default";
-    defaultOption.value = "default";
-    selector.appendChild(defaultOption);
+  const defaultOption = document.createElement("option");
+  defaultOption.textContent = "default";
+  defaultOption.value = "default";
+  selector.appendChild(defaultOption);
 
-    // 获取所有存储的分组
-    const groups = new Set(Object.values(localStorage));
-    groups.forEach((group) => {
-      const option = document.createElement("option");
-      option.textContent = group;
-      option.value = group;
-      selector.appendChild(option);
-    });
-
-    // 设置默认选中的选项
-    selector.value = currentGroup;
+  const groups = new Set(Object.values(localStorage));
+  groups.forEach((group) => {
+    const option = document.createElement("option");
+    option.textContent = group;
+    option.value = group;
+    selector.appendChild(option);
   });
+
+  selector.value = currentGroup;
 }

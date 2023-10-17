@@ -22,6 +22,21 @@ ul#extensions-list li {
   border-radius: 4px;
 }
 
+#groups-list li .delete-group {
+  display: none;  /* 默认隐藏 */
+  color: red;
+  cursor: pointer;
+  margin-left: 10px;  /* 添加一些间距 */
+}
+
+#newGroup {
+  padding: 5px;
+  border: 1px solid #e0e0e0;
+  margin: 5px 0;
+  background-color: #fff;
+  border-radius: 4px;
+}
+
 button {
   padding: 5px 10px;
   margin: 2px 5px 2px 5px;
