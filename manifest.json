@@ -20,26 +20,20 @@
   "commands": {
     "enable-all": {
       "suggested_key": {
-        "default": "Ctrl+Shift+E",
-        "mac": "MacCtrl+Shift+E"
+        "default": "Ctrl+Shift+X",
+        "mac": "MacCtrl+Shift+X"
       },
       "description": "Enable All Extensions"
     },
     "disable-all": {
       "suggested_key": {
-        "default": "Ctrl+Shift+D",
-        "mac": "MacCtrl+Shift+D"
+        "default": "Ctrl+Shift+Z",
+        "mac": "MacCtrl+Shift+Z"
       },
       "description": "Disable All Extensions"
     }
   },
   "background": {
     "service_worker": "background.js"
-  },
-  "content_scripts": [
-    {
-        "matches": ["<all_urls>"],
-        "js": ["background.js", "popup.js"]
-    }
-]
+  }
 }
