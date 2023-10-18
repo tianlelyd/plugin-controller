@@ -196,6 +196,18 @@ function setupBulkActions() {
     addNewGroup();
   };
 
+  // 当用户在新分组输入框中按下回车键时，添加新的分组。
+  document.getElementById("newGroup").addEventListener("keydown", function(event) {
+    // 检查是否按下了回车键
+    if (event.key === "Enter") {
+      // 阻止默认行为，例如在表单中按下回车可能会提交表单
+      event.preventDefault();
+  
+      // 执行添加分组的操作
+      addNewGroup();
+    }
+  });  
+
   // 当鼠标悬停在分组列表上时，显示叉叉图标。点击叉叉图标删除分组。
   document.addEventListener("click", function (event) {
     if (event.target.tagName === "LI") {
