@@ -1,3 +1,6 @@
+importScripts('extensionUtils.js');//引入扩展工具类
+
+// 监听并响应commands中设置的快捷键。
 chrome.commands.onCommand.addListener(function (command) {
   if (command === "enable-all") {
     // 启用所有插件的代码
@@ -9,18 +12,3 @@ chrome.commands.onCommand.addListener(function (command) {
     enableOrDisableAll(false);
   }
 });
-
-// 启用或禁用所有插件。
-function enableOrDisableAll(enable) {
-  chrome.management.getAll(function (extensions) {
-    extensions.forEach((extension) => {
-      // 不要启用或禁用自身。
-      if (extension.id !== chrome.runtime.id)
-        chrome.management.setEnabled(extension.id, enable,function() {
-            if (chrome.runtime.lastError) {
-                console.error(chrome.runtime.lastError.message);
-            } 
-        });
-    });
-  });
-}

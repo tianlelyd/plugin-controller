@@ -1,13 +1,27 @@
+/**
+ * extensionUtils.js
+ * 
+ * Chrome 扩展管理器的实用功能集合。
+ * 
+ * 本文件包含一套实用功能，用于协助管理 Chrome 扩展的管理器。功能描述如下：
+ * - 一键启用/禁用所有扩展。
+ * - 使用快捷键快速启用/禁用扩展。
+ * - 根据分组批量启用/禁用扩展。
+ * - 对单个扩展进行启用/禁用操作。
+ * 
+ * 作者: Liyd
+ * 创建日期: 2023-10-18
+ * 
+ * 依赖项:
+ * - 假设在运行环境中有Chrome API可用。
+ * - 需要相应函数中提及的DOM元素。
+ * 
+ * 注意: 
+ * 由于此扩展与 Chrome 扩展API 以及扩展的 HTML 结构紧密相关，确保随时更新以与最新的 API 或结构保持同步。
+ */
+
 // 获取插件自身的ID
 const currentExtensionId = chrome.runtime.id;
-
-// 监听 background.js 发送的消息。
-chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-  if (message.action === "enableOrDisableAll") {
-      enableOrDisableAll(message.enable);
-  }
-});
-
 
 // 当文档加载完毕后，初始化插件列表和设置批量操作。
 document.addEventListener("DOMContentLoaded", function () {
@@ -136,9 +150,6 @@ function updateGroupSelector() {
     deleteButton.onclick = function (event) {
       event.stopPropagation();
       deleteGroup(group);
-      // 删除分组
-      const groupName = event.target.parentElement.textContent.trim();
-      delete groups[groupName];
       // 从DOM中移除分组
       event.target.parentElement.remove();
     };
@@ -226,22 +237,12 @@ function setupBulkActions() {
   });
 }
 
-// 启用或禁用所有插件。
-function enableOrDisableAll(enable) {
-  chrome.management.getAll(function (extensions) {
-    extensions.forEach((extension) => {
-      // 不要启用或禁用自身。
-      if (extension.id !== currentExtensionId)
-        chrome.management.setEnabled(extension.id, enable);
-    });
-  });
-}
-
 // 启用或禁用已选择的分组。
 function enableOrDisableSelectedGroup(enable) {
   const selectedGroupItem = document.querySelector("#groups-list li.selected");
   if (selectedGroupItem) {
-    const groupName = selectedGroupItem.textContent;
+    // 由于分组li内部有一个叉叉图标，而分组名称不能包含叉叉。因此，分组名称是li的textContent去除叉叉图标后的内容。
+    const groupName = Array.from(selectedGroupItem.childNodes).filter(node => node.nodeType === 3).map(textNode => textNode.textContent.trim()).join("");
     enableOrDisableGroup(groupName, enable);
   } else {
     alert("Please select a group first.");
