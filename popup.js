@@ -25,6 +25,7 @@ const currentExtensionId = chrome.runtime.id;
 
 // 当文档加载完毕后，初始化插件列表和设置批量操作。
 document.addEventListener("DOMContentLoaded", function () {
+  updateGroupSelector();
   initializeExtensions();
   setupBulkActions();
 });
@@ -33,11 +34,11 @@ document.addEventListener("DOMContentLoaded", function () {
 function initializeExtensions() {
   chrome.management.getAll((extensions) => {
     const list = document.getElementById("extensions-list");
+    list.innerHTML = "";
     extensions.forEach((extension) => {
       if (extension.id === currentExtensionId) return;
       list.appendChild(createExtensionListItem(extension));
     });
-    updateGroupSelector();
     updateAllGroupSelectors();
   });
 }
@@ -117,21 +118,6 @@ function createGroupDropdown(extension) {
   return dropdown;
 }
 
-// 从localStorage中获取插件的分组。
-function getGroup(extensionId) {
-  return localStorage.getItem(extensionId) || "default";
-}
-
-// 将插件的分组设置到localStorage中。
-function setGroup(extensionId, groupName) {
-  // 如果分组名为"default"，则从localStorage中删除插件的分组。
-  if (groupName === "default") {
-    localStorage.removeItem(extensionId);
-  } else {
-    localStorage.setItem(extensionId, groupName);
-  }
-}
-
 // 更新插件分组列表的分组选择器。
 function updateGroupSelector() {
   const groups = new Set(Object.values(localStorage));
@@ -187,29 +173,15 @@ function toggleGroupSelection(event) {
   }
 }
 
-// 根据分组名启用或禁用一组插件。
-function enableOrDisableGroup(groupName, enable) {
-  chrome.management.getAll(function (extensions) {
-    extensions.forEach((extension) => {
-      if (
-        getGroup(extension.id) === groupName &&
-        extension.id !== currentExtensionId
-      ) {
-        chrome.management.setEnabled(extension.id, enable);
-      }
-    });
-  });
-}
-
 // 设置批量启用、禁用、添加分组的操作。
 function setupBulkActions() {
   // 启用所有插件。
   document.getElementById("enableAll").onclick = function () {
-    enableOrDisableAll(true);
+    enableOrDisableAll(true, initializeExtensions);
   };
   // 禁用所有插件。
   document.getElementById("disableAll").onclick = function () {
-    enableOrDisableAll(false);
+    enableOrDisableAll(false, initializeExtensions);
   };
   // 启用已选择的分组。
   document.getElementById("enableGroup").onclick = function () {
@@ -243,7 +215,8 @@ function enableOrDisableSelectedGroup(enable) {
   if (selectedGroupItem) {
     // 由于分组li内部有一个叉叉图标，而分组名称不能包含叉叉。因此，分组名称是li的textContent去除叉叉图标后的内容。
     const groupName = Array.from(selectedGroupItem.childNodes).filter(node => node.nodeType === 3).map(textNode => textNode.textContent.trim()).join("");
-    enableOrDisableGroup(groupName, enable);
+    // 根据分组启用或禁用插件。处理完成调用initializeExtensions()更新插件列表。以免插件列表中插件的启用/禁用状态与实际不符。
+    enableOrDisableGroup(groupName, enable, initializeExtensions);
   } else {
     alert("Please select a group first.");
   }
