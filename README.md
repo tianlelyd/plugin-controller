@@ -58,5 +58,5 @@ If you have any feedback or need support, please post Issues.
 
 ## License
 
-This extension is licensed under the MIT license. For more details, please see [LICENSE](.LICENSE).
+This extension is licensed under the MIT license. For more details, please see [LICENSE](LICENSE).
 

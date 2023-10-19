@@ -58,5 +58,5 @@
 
 ## 许可
 
-此扩展根据MIT许可证授权。有关更多详细信息，请参阅 [LICENSE](.LICENSE)。
+此扩展根据MIT许可证授权。有关更多详细信息，请参阅 [LICENSE](LICENSE)。
 
